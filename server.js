@@ -4,6 +4,7 @@ import inputChatLoop from "./src/chat/inputChatLoop.js";
 import miscellaneous from "./src/chat/miscellaneous.js";
 import chatTempMemory from "./src/chat/chatTempMemory.js";
 import embedding from "./src/embedding/embedding.js";
+import chatTemplate from "./src/chat/chatTemplate.js";
 
 // 1] chat
 
@@ -22,5 +23,7 @@ import embedding from "./src/embedding/embedding.js";
 // Active runner: terminal chat with temporary memory for the current session.
 // chatTempMemory();
 
+chatTemplate();
+
 // 2] embedding
-embedding();
+// embedding();
