@@ -1,8 +1,8 @@
-import { loadAndSplitPDF } from "./pdf.js";
+import loadPDF from "./pdf.js";
 import { storeDocs, askQuestion } from "./rag.js";
 
 async function main() {
-  const docs = await loadAndSplitPDF("./data/MERN Stack.pdf");
+  const docs = await loadPDF("./data/MERN Stack.pdf");
   await storeDocs(docs);
   while (true) {
     const input = prompt("You :- ");
@@ -14,4 +14,4 @@ async function main() {
   }
 }
 
-return main;
+export default main;

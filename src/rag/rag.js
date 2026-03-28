@@ -1,32 +1,39 @@
 import { GoogleGenerativeAIEmbeddings } from "@langchain/google-genai";
 import { GoogleGenerativeAI } from "@langchain/google-genai";
 import { Pinecone } from "@pinecone-database/pinecone";
-import config from "../config/config.js";
+import config from "./config/config.js";
 
+// ✅ Embeddings
 const embeddings = new GoogleGenerativeAIEmbeddings({
   apiKey: config.GEMINI_API_KEY,
 });
 
+// ✅ Gemini LLM
 const client = new GoogleGenerativeAI({
   apiKey: config.GEMINI_API_KEY,
 });
 
+// ✅ Pinecone
 const pinecone = new Pinecone({
   apiKey: config.PINECONE_API_KEY,
 });
 
 const index = pinecone.Index(config.PINECONE_INDEX);
 
-// 👉 Store docs
-export const storeDocs = async (docs) => {
+// 👉 Store documents
+const storeDocs = async (docs) => {
   const vectors = await Promise.all(
-    docs.map(async (doc, i) => ({
-      id: `doc-${i}-${Date.now()}`,
-      values: await embeddings.embedQuery(doc.pageContent),
-      metadata: {
-        text: doc.pageContent,
-      },
-    })),
+    docs.map(async (doc, i) => {
+      const embedding = await embeddings.embedDocuments([doc.pageContent]);
+
+      return {
+        id: `doc-${i}-${Date.now()}`,
+        values: embedding[0],
+        metadata: {
+          text: doc.pageContent,
+        },
+      };
+    }),
   );
 
   await index.upsert(vectors);
@@ -34,30 +41,32 @@ export const storeDocs = async (docs) => {
 };
 
 // 👉 Ask question
-export const askQuestion = async (question) => {
+const askQuestion = async (question) => {
+  // 1. Query embedding
   const queryEmbedding = await embeddings.embedQuery(question);
 
+  // 2. Search
   const result = await index.query({
     vector: queryEmbedding,
     topK: 5,
     includeMetadata: true,
   });
 
+  // 3. Build context
   const context = result.matches.map((m) => m.metadata.text).join("\n");
 
-  const response = await client.chat.completions.create({
+  // 4. Gemini answer
+  const model = client.getGenerativeModel({
     model: "gemini-2.5-flash",
-    messages: [
-      {
-        role: "system",
-        content: "Answer only from context. If not found, say 'Not in notes'.",
-      },
-      {
-        role: "user",
-        content: `Context:\n${context}\n\nQuestion: ${question}`,
-      },
-    ],
   });
 
-  return response.choices[0].message.content;
+  const resultLLM = await model.generateContent(
+    `Context:\n${context}\n\nQuestion: ${question}\n\nAnswer only from context. If not found, say 'Not in notes'.`,
+  );
+
+  const answer = resultLLM.response.text();
+
+  return answer;
 };
+
+export { askQuestion, storeDocs };

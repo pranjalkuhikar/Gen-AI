@@ -2,7 +2,7 @@ import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 import pdf from "pdf-parse";
 import fs from "fs";
 
-export const loadPDF = async (filePath) => {
+const loadPDF = async (filePath) => {
   const dataBuffer = fs.readFileSync(filePath);
   const data = await pdf(dataBuffer);
 
@@ -15,3 +15,5 @@ export const loadPDF = async (filePath) => {
 
   return docs;
 };
+
+export default loadPDF;
