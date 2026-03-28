@@ -30,6 +30,68 @@ const pinecone = new Pinecone({
 const index = pinecone.Index(config.PINECONE_INDEX);
 const UPSERT_BATCH_SIZE = 100;
 const EMBEDDING_CONCURRENCY = 10;
+let indexDimensionPromise;
+let hasLoggedDimensionTrim = false;
+
+const getIndexDimension = async () => {
+  if (!indexDimensionPromise) {
+    indexDimensionPromise = pinecone
+      .describeIndex(config.PINECONE_INDEX)
+      .then((indexDescription) => {
+        if (typeof indexDescription.dimension !== "number") {
+          throw new Error(
+            `Could not determine dimension for Pinecone index "${config.PINECONE_INDEX}".`,
+          );
+        }
+
+        return indexDescription.dimension;
+      });
+  }
+
+  return indexDimensionPromise;
+};
+
+const normalizeVector = (vector) => {
+  const magnitude = Math.sqrt(
+    vector.reduce((sum, value) => sum + value * value, 0),
+  );
+
+  if (magnitude === 0) {
+    return vector;
+  }
+
+  return vector.map((value) => value / magnitude);
+};
+
+const fitVectorToDimension = (vector, targetDimension) => {
+  if (!Array.isArray(vector) || vector.length === 0) {
+    throw new Error("Embedding generation returned an empty vector.");
+  }
+
+  let resizedVector = vector;
+
+  if (vector.length === targetDimension) {
+    resizedVector = vector;
+  } else if (vector.length < targetDimension) {
+    throw new Error(
+      `Embedding dimension ${vector.length} is smaller than Pinecone index dimension ${targetDimension}.`,
+    );
+  } else {
+    if (!hasLoggedDimensionTrim) {
+      console.warn(
+        `Pinecone index dimension is ${targetDimension}, trimming Gemini embeddings from ${vector.length} to match.`,
+      );
+      hasLoggedDimensionTrim = true;
+    }
+    resizedVector = vector.slice(0, targetDimension);
+  }
+
+  if (targetDimension !== 3072) {
+    return normalizeVector(resizedVector);
+  }
+
+  return resizedVector;
+};
 
 const embedTexts = async (texts, embeddingModel) => {
   const vectors = [];
@@ -59,6 +121,7 @@ const storeDocs = async (docs) => {
     throw new Error("No non-empty document chunks were generated for Pinecone.");
   }
 
+  const indexDimension = await getIndexDimension();
   const embeddedDocs = await embedTexts(
     chunks.map((chunk) => chunk.text),
     documentEmbeddings,
@@ -66,7 +129,7 @@ const storeDocs = async (docs) => {
 
   const records = embeddedDocs.map((values, i) => ({
     id: chunks[i].id,
-    values,
+    values: fitVectorToDimension(values, indexDimension),
     metadata: {
       text: chunks[i].text,
     },
@@ -93,7 +156,11 @@ const storeDocs = async (docs) => {
 // 👉 Ask question
 const askQuestion = async (question) => {
   // 1. Query embedding
-  const queryEmbedding = await queryEmbeddings.embedQuery(question);
+  const indexDimension = await getIndexDimension();
+  const queryEmbedding = fitVectorToDimension(
+    await queryEmbeddings.embedQuery(question),
+    indexDimension,
+  );
 
   // 2. Search
   const result = await index.query({

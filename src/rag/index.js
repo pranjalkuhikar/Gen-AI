@@ -4,7 +4,7 @@ import { storeDocs, askQuestion } from "./rag.js";
 
 async function main() {
   const prompt = promptSync();
-  const docs = await loadPDF("./data/MERNStack.pdf");
+  const docs = await loadPDF("./data/Pranjal_Kuhikar_Resume.pdf");
   await storeDocs(docs);
   while (true) {
     const input = prompt("You :- ");
