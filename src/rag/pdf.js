@@ -1,5 +1,5 @@
-import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
-import pdf from "pdf-parse";
+import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
+import * as pdf from "pdf-parse";
 import fs from "fs";
 
 const loadPDF = async (filePath) => {

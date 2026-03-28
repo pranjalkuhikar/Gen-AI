@@ -1,7 +1,7 @@
 import { GoogleGenerativeAIEmbeddings } from "@langchain/google-genai";
-import { GoogleGenerativeAI } from "@langchain/google-genai";
+import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { Pinecone } from "@pinecone-database/pinecone";
-import config from "./config/config.js";
+import config from "../config/config.js";
 
 // ✅ Embeddings
 const embeddings = new GoogleGenerativeAIEmbeddings({
@@ -9,7 +9,7 @@ const embeddings = new GoogleGenerativeAIEmbeddings({
 });
 
 // ✅ Gemini LLM
-const client = new GoogleGenerativeAI({
+const client = new ChatGoogleGenerativeAI({
   apiKey: config.GEMINI_API_KEY,
 });
 
