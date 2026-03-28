@@ -6,7 +6,8 @@ import chatTempMemory from "./src/chat/chatTempMemory.js";
 import embedding from "./src/embedding/embedding.js";
 import chatTemplate from "./src/chat/chatTemplate.js";
 import finalChat from "./src/chat/finalChat.js";
-import pdfRag from "./src/rag/index.js";
+// import pdfRag from "./src/rag/index.js";
+import loader from "./src/regs/rag.js";
 
 // 1] chat
 
@@ -33,4 +34,6 @@ import pdfRag from "./src/rag/index.js";
 // embedding();
 
 // 3] rag
-pdfRag();
+// pdfRag();
+
+loader("./src/data/Pranjal_Kuhikar_Resume.pdf");
