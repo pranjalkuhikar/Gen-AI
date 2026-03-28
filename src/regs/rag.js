@@ -1,11 +1,18 @@
 import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
+import { CheerioWebBaseLoader } from "@langchain/community/document_loaders/web/cheerio";
 
-async function loader(filePath) {
+async function loadPDF(filePath) {
   const loader = new PDFLoader(filePath);
 
   const docs = await loader.load();
 
-  console.log(docs);
+  console.log(docs.length);
 }
 
-export default loader;
+async function loadBrowser(url) {
+  const loader = new CheerioWebBaseLoader(url);
+  const docs = await loader.load();
+  console.log(docs[0].pageContent);
+}
+
+export { loadPDF, loadBrowser };

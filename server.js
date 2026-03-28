@@ -7,7 +7,7 @@ import embedding from "./src/embedding/embedding.js";
 import chatTemplate from "./src/chat/chatTemplate.js";
 import finalChat from "./src/chat/finalChat.js";
 // import pdfRag from "./src/rag/index.js";
-import loader from "./src/regs/rag.js";
+import { loadPDF, loadBrowser } from "./src/regs/rag.js";
 
 // 1] chat
 
@@ -36,4 +36,7 @@ import loader from "./src/regs/rag.js";
 // 3] rag
 // pdfRag();
 
-loader("./src/data/Pranjal_Kuhikar_Resume.pdf");
+loadPDF("./src/data/Pranjal_Kuhikar_Resume.pdf");
+loadBrowser(
+  "https://www.apple.com/in/macbook-pro/?afid=p240%7Cgo~cmp-11116556120~adg-109516736379~ad-799103666860_kwd-10778630~dev-c~ext-336755558170~prd-~mca-~nt-search&cid=aos-in-kwgo-txt-brand-brand--",
+);
