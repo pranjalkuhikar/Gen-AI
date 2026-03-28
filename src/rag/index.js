@@ -1,8 +1,10 @@
 import loadPDF from "./pdf.js";
+import promptSync from "prompt-sync";
 import { storeDocs, askQuestion } from "./rag.js";
 
 async function main() {
-  const docs = await loadPDF("./data/MERN Stack.pdf");
+  const prompt = promptSync();
+  const docs = await loadPDF("./data/MERNStack.pdf");
   await storeDocs(docs);
   while (true) {
     const input = prompt("You :- ");
