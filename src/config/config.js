@@ -10,6 +10,8 @@ dotenv.config({ path: envFilePath });
 
 const _config = {
   GEMINI_API_KEY: process.env.GEMINI_API_KEY?.trim(),
+  PINECONE_API_KEY: process.env.PINECONE_API_KEY?.trim(),
+  PINECONE_INDEX: process.env.PINECONE_INDEX?.trim(),
 };
 
 if (!_config.GEMINI_API_KEY) {

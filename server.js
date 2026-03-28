@@ -6,6 +6,7 @@ import chatTempMemory from "./src/chat/chatTempMemory.js";
 import embedding from "./src/embedding/embedding.js";
 import chatTemplate from "./src/chat/chatTemplate.js";
 import finalChat from "./src/chat/finalChat.js";
+import pdfRag from "./src/rag/index.js";
 
 // 1] chat
 
@@ -26,7 +27,10 @@ import finalChat from "./src/chat/finalChat.js";
 
 // chatTemplate();
 
-finalChat();
+// finalChat();
 
 // 2] embedding
 // embedding();
+
+// 3] rag
+pdfRag();
