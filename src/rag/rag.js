@@ -4,8 +4,15 @@ import { Pinecone } from "@pinecone-database/pinecone";
 import config from "../config/config.js";
 
 // ✅ Embeddings
-const embeddings = new GoogleGenerativeAIEmbeddings({
+const documentEmbeddings = new GoogleGenerativeAIEmbeddings({
   model: "gemini-embedding-001",
+  taskType: "RETRIEVAL_DOCUMENT",
+  apiKey: config.GEMINI_API_KEY,
+});
+
+const queryEmbeddings = new GoogleGenerativeAIEmbeddings({
+  model: "gemini-embedding-001",
+  taskType: "RETRIEVAL_QUERY",
   apiKey: config.GEMINI_API_KEY,
 });
 
@@ -21,28 +28,72 @@ const pinecone = new Pinecone({
 });
 
 const index = pinecone.Index(config.PINECONE_INDEX);
+const UPSERT_BATCH_SIZE = 100;
+const EMBEDDING_CONCURRENCY = 10;
+
+const embedTexts = async (texts, embeddingModel) => {
+  const vectors = [];
+
+  for (let i = 0; i < texts.length; i += EMBEDDING_CONCURRENCY) {
+    const batch = texts.slice(i, i + EMBEDDING_CONCURRENCY);
+    const batchVectors = await Promise.all(
+      batch.map((text) => embeddingModel.embedQuery(text)),
+    );
+
+    vectors.push(...batchVectors);
+  }
+
+  return vectors;
+};
 
 // 👉 Store documents
 const storeDocs = async (docs) => {
-  const contents = docs.map((doc) => doc.pageContent);
-  const embeddedDocs = await embeddings.embedDocuments(contents);
+  const chunks = docs
+    .map((doc, i) => ({
+      id: `doc-${i}`,
+      text: doc.pageContent?.trim() ?? "",
+    }))
+    .filter((chunk) => chunk.text.length > 0);
 
-  const vectors = embeddedDocs.map((values, i) => ({
-    id: `doc-${i}-${Date.now()}`,
+  if (chunks.length === 0) {
+    throw new Error("No non-empty document chunks were generated for Pinecone.");
+  }
+
+  const embeddedDocs = await embedTexts(
+    chunks.map((chunk) => chunk.text),
+    documentEmbeddings,
+  );
+
+  const records = embeddedDocs.map((values, i) => ({
+    id: chunks[i].id,
     values,
     metadata: {
-      text: docs[i].pageContent,
+      text: chunks[i].text,
     },
   }));
 
-  await index.upsert(vectors);
-  console.log("✅ Stored in Pinecone");
+  const emptyEmbeddingCount = records.filter(
+    (record) => !Array.isArray(record.values) || record.values.length === 0,
+  ).length;
+
+  if (emptyEmbeddingCount > 0) {
+    throw new Error(
+      `Embedding generation returned ${emptyEmbeddingCount} empty vector(s).`,
+    );
+  }
+
+  for (let i = 0; i < records.length; i += UPSERT_BATCH_SIZE) {
+    const batch = records.slice(i, i + UPSERT_BATCH_SIZE);
+    await index.upsert({ records: batch });
+  }
+
+  console.log(`✅ Stored ${records.length} chunks in Pinecone`);
 };
 
 // 👉 Ask question
 const askQuestion = async (question) => {
   // 1. Query embedding
-  const queryEmbedding = await embeddings.embedQuery(question);
+  const queryEmbedding = await queryEmbeddings.embedQuery(question);
 
   // 2. Search
   const result = await index.query({
