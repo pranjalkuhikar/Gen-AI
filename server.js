@@ -6,7 +6,7 @@ import chatTempMemory from "./src/chat/chatTempMemory.js";
 import embedding from "./src/embedding/embedding.js";
 import chatTemplate from "./src/chat/chatTemplate.js";
 import finalChat from "./src/chat/finalChat.js";
-// import pdfRag from "./src/rag/index.js";
+// import pdfRags from "./src/rag/index.js";
 import { loadPDF, loadBrowser } from "./src/rags/practice.js";
 import pdfRag from "./src/rags/rag.js";
 
@@ -35,11 +35,11 @@ import pdfRag from "./src/rags/rag.js";
 // embedding();
 
 // 3] rag
-// pdfRag();
+// pdfRags();
 
 // loadPDF("./src/data/Pranjal_Kuhikar_Resume.pdf");
 // loadBrowser(
 //   "https://www.apple.com/in/macbook-pro/?afid=p240%7Cgo~cmp-11116556120~adg-109516736379~ad-799103666860_kwd-10778630~dev-c~ext-336755558170~prd-~mca-~nt-search&cid=aos-in-kwgo-txt-brand-brand--",
 // );
 
-pdfRag();
+pdfRag("./src/data/Pranjal_Kuhikar_Resume.pdf");
