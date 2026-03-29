@@ -2,7 +2,7 @@ import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
-import { GoogleGenerativeAIEmbeddings } from "@langchain/google-genai";
+import { HuggingFaceTransformersEmbeddings } from "@langchain/community/embeddings/transformers";
 import { Pinecone } from "@pinecone-database/pinecone";
 import { PineconeStore } from "@langchain/pinecone";
 import promptSync from "prompt-sync";
@@ -15,9 +15,8 @@ const model = new ChatGoogleGenerativeAI({
 });
 
 // ===== EMBEDDINGS =====
-const embeddings = new GoogleGenerativeAIEmbeddings({
-  model: "gemini-embedding-001",
-  apiKey: config.GEMINI_API_KEY,
+const embeddings = new HuggingFaceTransformersEmbeddings({
+  model: "Xenova/all-MiniLM-L6-v2", // 👉 384 dimension
 });
 
 // ===== PINECONE =====
