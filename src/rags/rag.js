@@ -42,15 +42,28 @@ function template() {
 async function setup(filePath) {
   const loader = new PDFLoader(filePath);
   const docs = await loader.load();
+  const nonEmptyDocs = docs.filter((doc) => doc.pageContent?.trim());
+
+  if (nonEmptyDocs.length === 0) {
+    throw new Error(`No text could be extracted from PDF: ${filePath}`);
+  }
+
   const textSplitter = new RecursiveCharacterTextSplitter({
     chunkSize: 1000,
     chunkOverlap: 100,
   });
-  const chunks = await textSplitter.splitDocuments(docs);
+  const chunks = (await textSplitter.splitDocuments(nonEmptyDocs)).filter(
+    (chunk) => chunk.pageContent?.trim(),
+  );
+
+  if (chunks.length === 0) {
+    throw new Error(`PDF was loaded, but no non-empty chunks were created: ${filePath}`);
+  }
+
   await PineconeStore.fromDocuments(chunks, embeddings, {
     pineconeIndex: index,
   });
-  console.log("Data stored once ✅");
+  console.log(`Stored ${chunks.length} chunks in Pinecone ✅`);
 }
 
 // ===== LOAD EXISTING VECTOR DB =====
