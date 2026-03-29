@@ -8,81 +8,75 @@ import { PineconeStore } from "@langchain/pinecone";
 import promptSync from "prompt-sync";
 import config from "../config/config.js";
 
+// ===== MODEL =====
 const model = new ChatGoogleGenerativeAI({
   model: "gemini-2.5-flash",
   apiKey: config.GEMINI_API_KEY,
 });
 
-const queryEmbeddings = new GoogleGenerativeAIEmbeddings({
+// ===== EMBEDDINGS =====
+const embeddings = new GoogleGenerativeAIEmbeddings({
   model: "gemini-embedding-001",
-  taskType: "RETRIEVAL_QUERY",
   apiKey: config.GEMINI_API_KEY,
 });
 
-const documentEmbeddings = new GoogleGenerativeAIEmbeddings({
-  model: "gemini-embedding-001",
-  taskType: "RETRIEVAL_DOCUMENT",
-  apiKey: config.GEMINI_API_KEY,
-});
-
+// ===== PINECONE =====
 const pinecone = new Pinecone({
   apiKey: config.PINECONE_API_KEY,
 });
 
 const index = pinecone.Index(config.PINECONE_INDEX);
 
+// ===== INPUT =====
 const prompt = promptSync();
 
+// ===== PROMPT =====
 function template() {
   return ChatPromptTemplate.fromMessages([
-    ["system", `You are an expert PDF analyzer. Only return valid JSON.`],
-    ["human", `Analyze this PDF description:{pdfText}`],
+    ["system", "You are an expert PDF analyzer."],
+    ["human", "Answer using this context:\n{pdfText}"],
   ]);
 }
 
-async function loadPDF(filePath) {
+// ===== LOAD + STORE (ONLY FIRST TIME) =====
+async function setup(filePath) {
   const loader = new PDFLoader(filePath);
   const docs = await loader.load();
-  return docs;
-}
-
-async function splitText(docs) {
   const textSplitter = new RecursiveCharacterTextSplitter({
     chunkSize: 1000,
     chunkOverlap: 100,
   });
-  return textSplitter.splitDocuments(docs);
+  const chunks = await textSplitter.splitDocuments(docs);
+  await PineconeStore.fromDocuments(chunks, embeddings, {
+    pineconeIndex: index,
+  });
+  console.log("Data stored once ✅");
 }
 
-async function storeChunks(chunks) {
-  const vectorStore = await PineconeStore.fromDocuments(
-    chunks,
-    documentEmbeddings,
-    { pineconeIndex: index },
-  );
+// ===== LOAD EXISTING VECTOR DB =====
+async function getVectorStore() {
+  const vectorStore = await PineconeStore.fromExistingIndex(embeddings, {
+    pineconeIndex: index,
+  });
   return vectorStore;
 }
 
-async function main(filePath) {
-  //   while (true) {
-  //     const input = prompt("You :- ");
-  //     if (input === "exit") {
-  //       break;
-  //     }
-  const docs = await loadPDF(filePath);
-  const splitDocs = await splitText(docs);
-  const vectorStore = await storeChunks(splitDocs);
-
-  const useQuery = "Hello";
-  const results = await vectorStore.similaritySearch(useQuery, 3);
-  const context = results.map((result) => result.pageContent).join("\n");
-
+async function main() {
+  const vectorStore = await getVectorStore();
   const chain = template().pipe(model);
-  const response = await chain.invoke({
-    pdfText: context,
-  });
-  console.log("Bot :- ", response.content);
-  //   }
+
+  while (true) {
+    const input = prompt("You :- ");
+    if (input === "exit") break;
+
+    const results = await vectorStore.similaritySearch(input, 3);
+    const context = results.map((result) => result.pageContent).join("\n");
+
+    const response = await chain.invoke({
+      pdfText: context,
+    });
+    console.log("Bot :- ", response.content);
+  }
 }
 
 export default main;
