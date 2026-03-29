@@ -8,7 +8,7 @@ import chatTemplate from "./src/chat/chatTemplate.js";
 import finalChat from "./src/chat/finalChat.js";
 // import pdfRags from "./src/rag/index.js";
 import { loadPDF, loadBrowser } from "./src/rags/practice.js";
-import pdfRag from "./src/rags/rag.js";
+import { setup, pdfRag } from "./src/rags/rag.js";
 
 // 1] chat
 

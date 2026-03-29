@@ -2,7 +2,7 @@ import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
-import { HuggingFaceTransformersEmbeddings } from "@langchain/community/embeddings/transformers";
+import { OllamaEmbeddings } from "@langchain/ollama";
 import { Pinecone } from "@pinecone-database/pinecone";
 import { PineconeStore } from "@langchain/pinecone";
 import promptSync from "prompt-sync";
@@ -15,8 +15,8 @@ const model = new ChatGoogleGenerativeAI({
 });
 
 // ===== EMBEDDINGS =====
-const embeddings = new HuggingFaceTransformersEmbeddings({
-  model: "Xenova/all-MiniLM-L6-v2", // 👉 384 dimension
+const embeddings = new OllamaEmbeddings({
+  model: "nomic-embed-text", // 👉 768 dimension
 });
 
 // ===== PINECONE =====
@@ -33,7 +33,7 @@ const prompt = promptSync();
 function template() {
   return ChatPromptTemplate.fromMessages([
     ["system", "You are an expert PDF analyzer."],
-    ["human", "Answer using this context:\n{pdfText}"],
+    ["human", "Answer the question based on this context:\n{pdfText}"],
   ]);
 }
 
@@ -60,7 +60,8 @@ async function getVectorStore() {
   return vectorStore;
 }
 
-async function main() {
+async function pdfRag(filePath) {
+  await setup(filePath);
   const vectorStore = await getVectorStore();
   const chain = template().pipe(model);
 
@@ -78,4 +79,4 @@ async function main() {
   }
 }
 
-export default main;
+export { setup, pdfRag };
