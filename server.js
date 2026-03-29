@@ -42,4 +42,5 @@ import { setup, pdfRag } from "./src/rags/rag.js";
 //   "https://www.apple.com/in/macbook-pro/?afid=p240%7Cgo~cmp-11116556120~adg-109516736379~ad-799103666860_kwd-10778630~dev-c~ext-336755558170~prd-~mca-~nt-search&cid=aos-in-kwgo-txt-brand-brand--",
 // );
 
-pdfRag("./src/data/Pranjal_Kuhikar_Resume.pdf");
+setup("./src/data/Pranjal_Kuhikar_Resume.pdf");
+// pdfRag();

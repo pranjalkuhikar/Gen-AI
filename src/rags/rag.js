@@ -2,7 +2,7 @@ import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
-import { OllamaEmbeddings } from "@langchain/ollama";
+import { CohereEmbeddings } from "@langchain/cohere";
 import { Pinecone } from "@pinecone-database/pinecone";
 import { PineconeStore } from "@langchain/pinecone";
 import promptSync from "prompt-sync";
@@ -15,8 +15,9 @@ const model = new ChatGoogleGenerativeAI({
 });
 
 // ===== EMBEDDINGS =====
-const embeddings = new OllamaEmbeddings({
-  model: "nomic-embed-text", // 👉 768 dimension
+const embeddings = new CohereEmbeddings({
+  apiKey: config.COHERE_API_KEY,
+  model: "embed-english-v3.0",
 });
 
 // ===== PINECONE =====
@@ -60,8 +61,7 @@ async function getVectorStore() {
   return vectorStore;
 }
 
-async function pdfRag(filePath) {
-  await setup(filePath);
+async function pdfRag() {
   const vectorStore = await getVectorStore();
   const chain = template().pipe(model);
 
