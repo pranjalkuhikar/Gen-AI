@@ -3,9 +3,7 @@ import { CheerioWebBaseLoader } from "@langchain/community/document_loaders/web/
 
 async function loadPDF(filePath) {
   const loader = new PDFLoader(filePath);
-
   const docs = await loader.load();
-
   console.log(docs.length);
 }
 
